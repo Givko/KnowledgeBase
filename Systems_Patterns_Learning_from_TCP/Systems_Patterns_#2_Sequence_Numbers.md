@@ -56,7 +56,7 @@ TCP uses Sequence Numbers to keep track of what bytes it has sent and what bytes
 - Using this mechanism TCP server/client can keep track if
   - There are any gaps(not received bytes)
   - In-order delivery
-  - Guarantee exactly once delivery
+  - At-least-once (with retransmission)
   - Idempotency
 
 ### Example
@@ -67,7 +67,6 @@ Client sends:
 
 Server view:
   Receives packet 1: SEQ=100 -> ACK=105 (expecting byte 105 next)
-ACK=105
 ```
 
 **Why bytes, not packets**: Partial retransmission. If a 1000-byte packet is lost, TCP can resend just the missing 500 bytes instead of the entire packet.

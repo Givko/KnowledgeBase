@@ -61,23 +61,18 @@ TCP uses Sequence Numbers to keep track of what bytes it has sent and what bytes
 
 ### Example
 
-Client sends packet 1:
-SEQ=100,Payload="Hello" (5 bytes)
-Sends bytes 100-104
+```
+Client sends:
+  Packet 1: SEQ=100,Payload="Hello" (5 bytes) -> bytes 100-104
 
-Server responds:
+Server view:
+  Receives packet 1: SEQ=100 -> ACK=105 (expecting byte 105 next)
 ACK=105
-
-Client sends packet 2:
-SEQ=105, payload="World" (5 bytes)
-Sends bytes 105-109
-
-Server responds:
-ACK=110
+```
 
 **Why bytes, not packets**: Partial retransmission. If a 1000-byte packet is lost, TCP can resend just the missing 500 bytes instead of the entire packet.
 
-### Gap Detection
+#### Gap Detection
 
 **Scenario**: Client sends 3 packets, middle one is lost
 
@@ -101,17 +96,6 @@ Client's view:
 ```
 
 **The key insight**: The sequence number gap (105 → 110) immediately reveals packet loss. No timeout needed for detection—the gap IS the signal.
-
-**Same pattern in Kafka**:
-
-```
-Consumer commits offset=100
-Next poll receives offset=105
-→ Messages 101-104 are missing (producer skipped them or partition reassigned)
-→ Consumer can either: fail, or continue (depends on requirements)
-```
-
-In both cases, **non-consecutive sequence numbers reveal data loss**.
 
 ## Monotonic Counters in Kafka (Offsets)
 
@@ -150,6 +134,17 @@ Consumer processes message successfully:
 
 Producer sends message "World":
 → Broker assigns offset=101 to Partition 0
+
+#### Gap Example
+
+```
+Consumer commits offset=100
+Next poll receives offset=105
+→ Messages 101-104 are missing (producer skipped them or partition reassigned)
+→ Consumer can either: fail, or continue (depends on requirements)
+```
+
+In both cases, **non-consecutive sequence numbers reveal data loss**.
 
 **Compare to TCP**:
 

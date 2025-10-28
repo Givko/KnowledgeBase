@@ -60,7 +60,7 @@ Raft uses the same FSM pattern for leader election. Three states:
 
 | TCP | Raft | Pattern |
 |-----|------|---------|
-| CLOSED → SYN_SENT | Follower → Candidate | Timeout triggers transition |
+| CLOSED → SYN_SENT | Follower → Candidate | SYN packet sent/Timeout triggers transition |
 | SYN_SENT → ESTABLISHED | Candidate → Leader | Confirmation needed (ACK vs votes) |
 | Can't skip SYN_SENT | Can't skip Candidate | Middle state enforces safety |
 

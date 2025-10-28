@@ -47,7 +47,7 @@ Both TCP and Kafka solve the same problem: **How do you order events in a stream
 
 **The lesson**: Position-based ordering is simpler and more reliable than time-based ordering when you have a single ordered stream.
 
-## Monotonic Counters in TCP (Sequence Numbers)
+## Sequence Numbers in TCP (Sequence Numbers)
 
 TCP uses Sequence Numbers to keep track of what bytes it has sent and what bytes have been received(acknowledged).
 
@@ -97,7 +97,7 @@ Client's view:
 
 **The key insight**: The sequence number gap (105 → 110) immediately reveals packet loss. No timeout needed for detection—the gap IS the signal.
 
-## Monotonic Counters in Kafka (Offsets)
+## Sequence Numbers in Kafka (Offsets)
 
 Kafka uses offsets to order messages within a partition, similar to how TCP orders bytes within a connection.
 
@@ -156,7 +156,7 @@ In both cases, **non-consecutive sequence numbers reveal data loss**.
 
 **Key point**: Kafka stores each consumer group's committed offset, so after crash, consumer knows where to resume. Just like TCP remembers which bytes were acknowledged.
 
-## Why Monotonic Counters Work
+## Why Sequence Numbers Work
 
 Three benefits apply to both TCP and Kafka:
 

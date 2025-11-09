@@ -12,11 +12,13 @@ other connected clients will receive it.
 **Milestone 2:** Store and Register Client Connections
 
 **Milestone 3:** Read Data and Broadcast Messages
+
 - Handle edge-triggered reads
 - Parse message boundaries
 - Queue messages to other clients
 
 **Milestone 4:** Write Buffered Data to Clients
+
 - Handle partial writes
 - Dynamic interest registration
 
@@ -1099,11 +1101,13 @@ fn main() {
 ## Testing the Complete Broadcast Server
 
 **Run the server:**
+
 ```bash
 cargo run
 ```
 
 **Open 3 client terminals and connect:**
+
 ```bash
 # Terminal 1 (Client A)
 nc localhost 8080
@@ -1116,26 +1120,31 @@ nc localhost 8080
 ```
 
 **In Client A, type:**
+
 ```
 Hello from A
 ```
 
 **Expected result:**
+
 - Client B sees: `Hello from A`
 - Client C sees: `Hello from A`
 - Client A does NOT see their own message (sender excluded)
 
 **In Client B, type:**
+
 ```
 Hello from B
 ```
 
 **Expected result:**
+
 - Client A sees: `Hello from B`
 - Client C sees: `Hello from B`
 - Client B does NOT see their own message
 
 **Server output should show:**
+
 ```
 Accepted connection from 127.0.0.1:xxxxx
 Registered client with Token(1)
@@ -1156,8 +1165,18 @@ Wrote 14 bytes to Token(3)
 In Client A, press `Ctrl+C` to disconnect.
 
 **Expected:**
+
 - Server prints: `Client Token(1) disconnected`
 - Clients B and C continue working
 - Messages from B and C still broadcast to each other
 
 **Success!** You've built a working epoll-based broadcast server. Every pattern you've learned here (edge-triggered loops, message parsing, write buffering) is used in production servers like nginx and Redis.
+
+## Resources
+
+**To learn more:**
+
+- [The C10K Problem](http://www.kegel.com/c10k.html) - Why event-driven I/O matters
+- [mio documentation](https://docs.rs/mio/latest/mio/) - Rust's I/O abstraction
+- [epoll man page](https://man7.org/linux/man-pages/man7/epoll.7.html) - Linux docs
+- [Tokio internals](https://tokio.rs/tokio/tutorial) - How async builds on this

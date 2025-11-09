@@ -7,7 +7,7 @@ that accepts TCP connections. We can detect when clients connect and call
 Today we'll complete the broadcast server. When a client sends "Hello\n", all
 other connected clients will receive it.
 
-## What We'll Builda
+## What We'll Build
 
 **Milestone 2:** Store and Register Client Connections
 
@@ -96,6 +96,14 @@ fn main() {
 **Problem:** Accepted streams are dropped immediately. We need to store them.
 
 Let's fix that.
+
+## Table of Contents
+
+- [Milestone 2: Store and Register Connections](#milestone-2-store-and-register-client-connections) (~15 min)
+- [Milestone 3: Read Data and Broadcast](#milestone-3-reading-data-from-clients) (~25 min)
+- [Milestone 4: Write Buffered Data](#milestone-4-write-buffered-data-to-clients) (~20 min)
+- [Testing](#testing-the-complete-broadcast-server) (~10 min)
+- [Resources](#resources)
 
 ## Milestone 2: Store and Register Client Connections
 

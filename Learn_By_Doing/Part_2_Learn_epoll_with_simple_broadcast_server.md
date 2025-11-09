@@ -268,3 +268,145 @@ fn main() {
     }
 }
 ```
+
+### Testing Milestone 2
+
+**Run the server:**
+
+```bash
+cargo run
+```
+
+**Connect 3 clients:**
+
+```bash
+#Terminal 1
+nc localhost 8080
+
+#Terminal 2
+nc localhost 8080
+
+#Terminal 3
+nc localhost 8080
+```
+
+**Expected output:**
+
+```
+Accepted connection from 127.0.0.1:xxxxx
+Registered client with Token(1)
+Accepted connection from 127.0.0.1:xxxxx
+Registered client with Token(2)
+Accepted connection from 127.0.0.1:xxxxx
+Registered client with Token(3)
+Client event for Token(1)
+Client event for Token(2)
+Client event for Token(3)
+```
+
+**What's happening:**
+
+- Each client gets unique Token (1, 2, 3)
+- Clients are registered for READABLE
+- When you type in netcat, epoll fires "Client event" messages
+- We're not reading the data yet (Milestone 3)
+
+**Current state:** Connections stay open and are tracked. Ready to read data!
+
+## Milestone 3: Reading Data from Clients
+
+### Challenge: Edge-Triggered Reading
+
+When clients send data, epoll fires a READABLE event. But remember: edge-triggered mode only notifies when state CHANGES (not-readable → readable).
+
+**Problem:** If we read once and return to poll(), we won't get another notification until NEW data arrives. Any unread data is lost.
+
+**Solution:** Read in a loop until WouldBlock.
+
+### Step 1: Handle client READABLE events
+
+Replace the `other_token` match arm with:
+
+```rust
+other_token => {
+    if event.is_readable() {
+        let connection = connections
+        .get_mut(&other_token)
+        .expect("Connection not found");
+
+        // Read loop - drain all available data
+        loop {
+            let mut buf = [0u8; 4096];
+            match connection.stream.read(&mut buf) {
+                Ok(0) => {
+                    // Connection closed by client
+                    println!("Client {:?} disconnected", other_token);
+                    // TODO: Remove connection (Milestone 3.5)
+                    break;
+                }
+                Ok(n) => {
+                    // Read n bytes into buf
+                    println!("Read {} bytes from {:?}", n, other_token);
+                    // TODO: Store in read_buf (next step)
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    // No more data available - all done
+                    break;
+                }
+                Err(e) => {
+                    eprintln!("Read error: {}", e);
+                    break;
+                }
+            }
+        }
+    }
+}
+```
+
+**What's happening:**
+
+1. **Check if readable:** Only process READABLE events (ignore others)
+2. **Get connection:** Look up by token in HashMap
+3. **Read loop:** Keep reading until WouldBlock (edge-triggered requirement)
+4. **Handle results:**
+   - `Ok(0)` = Client closed connection (EOF)
+   - `Ok(n)` = Read n bytes successfully
+   - `WouldBlock` = All data consumed, break loop
+   - Other errors = Log and break
+
+**Why the loop?**
+
+- Client might send 10KB of data
+- Each `read()` gets max 4096 bytes
+- Without loop: Read 4096, return to poll, lose 6KB
+- With loop: Read 4096, read 4096, read 1808, WouldBlock
+
+### Step 2: Handle disconnections (0 bytes read)
+
+When `read()` returns `Ok(0)`, the client closed the connection. We need cleanup.
+
+```rust
+Ok(0) => {
+    println!("Client {:?} disconnected", other_token);
+
+    // Deregister from epoll (stop monitoring)
+    poll.registry()
+        .deregister(&mut connection.stream)
+        .expect("Failed to deregister");
+
+    // Remove from HashMap (drops the connection)
+    connections.remove(&other_token);
+
+    break;  // Exit read loop
+}
+```
+
+**Why each step:**
+
+- `deregister()` - Tells epoll to stop monitoring this socket
+- `remove()` - Drops connection from HashMap, closes socket automatically
+- **No `shutdown()` needed** - Client already closed, socket closes when dropped
+
+**Note:** Calling `shutdown()` on already-closed socket returns error. Skip it.
+
+### Step 3: Store read bytes in buffer
